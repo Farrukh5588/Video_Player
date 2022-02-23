@@ -18,7 +18,8 @@
         tools:ignore="AllowBackup">
         <activity
             android:name=".PlayerActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout"/>
         <activity
             android:name=".FoldersActivity"
             android:exported="true"
