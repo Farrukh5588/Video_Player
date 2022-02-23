@@ -3,18 +3,24 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.rakhimov.videoplayer">
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
 
     <application
-        android:requestForegroundServiceExemption="true"
         android:allowBackup="true"
         android:icon="@mipmap/ic_video_player"
         android:label="@string/app_name"
+        android:requestForegroundServiceExemption="true"
         android:roundIcon="@mipmap/ic_video_player_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.VideoPlayer"
         tools:ignore="AllowBackup">
+        <activity
+            android:name=".FoldersActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
