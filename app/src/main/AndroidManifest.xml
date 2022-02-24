@@ -18,8 +18,12 @@
         tools:ignore="AllowBackup">
         <activity
             android:name=".PlayerActivity"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"
+            android:launchMode="singleTask"
             android:exported="true"
-            android:configChanges="uiMode|orientation|screenSize|screenLayout"/>
+            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            tools:ignore="UnusedAttribute" />
         <activity
             android:name=".FoldersActivity"
             android:exported="true"

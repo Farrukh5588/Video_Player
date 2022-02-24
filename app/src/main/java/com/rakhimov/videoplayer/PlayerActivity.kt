@@ -1,6 +1,12 @@
 package com.rakhimov.videoplayer
 
+import android.annotation.SuppressLint
+import android.app.AppOpsManager
+import android.app.PictureInPictureParams
+import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.ColorDrawable
+import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -23,15 +29,20 @@ import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.rakhimov.videoplayer.databinding.ActivityPlayerBinding
 import com.rakhimov.videoplayer.databinding.MoreFeaturesBinding
+import com.rakhimov.videoplayer.databinding.SpeedDialogBinding
+import java.text.DecimalFormat
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.system.exitProcess
 
 class PlayerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPlayerBinding
     private lateinit var runnable: Runnable
+    private var isSubtitle: Boolean = true
 
     companion object{
+        private var timer: Timer? = null
         private lateinit var player: SimpleExoPlayer
         lateinit var playerList: ArrayList<Video>
         var position: Int = -1
@@ -39,6 +50,7 @@ class PlayerActivity : AppCompatActivity() {
         private var isFullscreen: Boolean =false
         private var isLocked: Boolean =false
         lateinit var trackSelector: DefaultTrackSelector
+        private var speed: Float = 1.0f
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,6 +88,7 @@ class PlayerActivity : AppCompatActivity() {
         if (repeat) binding.repeatBtn.setImageResource(R.drawable.exo_controls_repeat_all)
         else binding.repeatBtn.setImageResource(R.drawable.exo_controls_repeat_off)
     }
+    @SuppressLint("SetTextI18n")
     private fun initializeBinding(){
         binding.backBtn.setOnClickListener {
             finish()
@@ -152,10 +165,111 @@ class PlayerActivity : AppCompatActivity() {
                     .create()
                     .show()
             }
+            bindingMF.subtitleBtn.setOnClickListener {
+                if (isSubtitle){
+                    trackSelector.parameters = DefaultTrackSelector.ParametersBuilder(this).setRendererDisabled(
+                        C.TRACK_TYPE_VIDEO, true
+                    ).build()
+                    Toast.makeText(this,"Subtitles Off", Toast.LENGTH_SHORT).show()
+                    isSubtitle = false
+                }else{
+                    trackSelector.parameters = DefaultTrackSelector.ParametersBuilder(this).setRendererDisabled(
+                        C.TRACK_TYPE_VIDEO, false
+                    ).build()
+                    Toast.makeText(this,"Subtitles On", Toast.LENGTH_SHORT).show()
+                    isSubtitle = true
+                }
+                dialog.dismiss()
+                playVideo()
+            }
+            bindingMF.speedBtn.setOnClickListener {
+                dialog.dismiss()
+                playVideo()
+                val customDialogS = LayoutInflater.from(this).inflate(R.layout.speed_dialog, binding.root, false)
+                val bindingS = SpeedDialogBinding.bind(customDialogS)
+                val dialogS = MaterialAlertDialogBuilder(this).setView(customDialogS)
+                    .setCancelable(false)
+                    .setPositiveButton("OK"){self, _ ->
+                        self.dismiss()
+                    }
+                    .setBackground(ColorDrawable(0x803700B3.toInt()))
+                    .create()
+                dialogS.show()
+                bindingS.speedText.text = "${DecimalFormat("#.##").format(speed)} X"
+                bindingS.minusBtn.setOnClickListener {
+                    changeSpeed(isIncrement = false)
+                    bindingS.speedText.text = "${DecimalFormat("#.##").format(speed)} X"
+                }
+                bindingS.plusBtn.setOnClickListener {
+                    changeSpeed(isIncrement = true)
+                    bindingS.speedText.text = "${DecimalFormat("#.##").format(speed)} X"
+                }
+            }
+            bindingMF.sleepTimer.setOnClickListener {
+                dialog.dismiss()
+                if (timer != null) Toast.makeText(this,"Timer Already Running!!\nClose App to Reset Timer!!",Toast.LENGTH_SHORT).show()
+                else{
+                    var sleepTime = 15
+                    val customDialogS = LayoutInflater.from(this).inflate(R.layout.speed_dialog, binding.root, false)
+                    val bindingS = SpeedDialogBinding.bind(customDialogS)
+                    val dialogS = MaterialAlertDialogBuilder(this).setView(customDialogS)
+                        .setCancelable(false)
+                        .setPositiveButton("OK"){self, _ ->
+                            timer = Timer()
+                            val task = object: TimerTask(){
+                                override fun run() {
+                                    moveTaskToBack(true)
+                                    exitProcess(1)
+                                }
+                            }
+                            timer!!.schedule(task, sleepTime*60*1000.toLong())
+                            self.dismiss()
+                            playVideo()
+                        }
+                        .setBackground(ColorDrawable(0x803700B3.toInt()))
+                        .create()
+                    dialogS.show()
+                    bindingS.speedText.text = "$sleepTime Min"
+                    bindingS.minusBtn.setOnClickListener {
+                        if (sleepTime > 15) sleepTime -= 15
+                        bindingS.speedText.text = "$sleepTime Min"
+                    }
+                    bindingS.plusBtn.setOnClickListener {
+                        if (sleepTime < 120) sleepTime += 15
+                        bindingS.speedText.text = "$sleepTime Min"
+                    }
+                    bindingMF.pipModeBtn.setOnClickListener {
+                        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                        val status = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            appOps.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), packageName) ==
+                                    AppOpsManager.MODE_ALLOWED
+                        } else { false }
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                            if (status) {
+                                this.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
+                                dialog.dismiss()
+                                binding.playerView.hideController()
+                                playVideo()
+                            }
+                            else{
+                                val intent = Intent("android.settings.PICTURE_IN_PICTURE_SETTINGS",
+                                    Uri.parse("package:$packageName"))
+                                startActivity(intent)
+                            }
+                        }else{
+                            Toast.makeText(this,"Feature Not Supported!!", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                            playVideo()
+                        }
+                    }
+                }
+            }
         }
     }
     private fun createPlayer(){
         try { player.release() }catch (e: Exception){}
+        speed = 1.0f
         trackSelector = DefaultTrackSelector(this)
         binding.videoTitle.text = playerList[position].title
         binding.videoTitle.isSelected = true
@@ -225,6 +339,19 @@ class PlayerActivity : AppCompatActivity() {
         binding.playPauseBtn.visibility = visibility
         if (isLocked) binding.lockButton.visibility = View.VISIBLE
         else binding.lockButton.visibility = visibility
+    }
+    private fun changeSpeed(isIncrement: Boolean){
+        if (isIncrement){
+            if (speed <= 2.9f){
+                speed += 0.10f
+            }
+        }
+        else{
+            if (speed > 0.20f){
+                speed -= 0.10f
+            }
+        }
+        player.setPlaybackSpeed(speed)
     }
 
     override fun onDestroy() {
