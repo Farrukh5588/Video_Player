@@ -238,31 +238,31 @@ class PlayerActivity : AppCompatActivity() {
                         if (sleepTime < 120) sleepTime += 15
                         bindingS.speedText.text = "$sleepTime Min"
                     }
-                    bindingMF.pipModeBtn.setOnClickListener {
-                        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-                        val status = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            appOps.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), packageName) ==
-                                    AppOpsManager.MODE_ALLOWED
-                        } else { false }
+                }
+            }
+            bindingMF.pipModeBtn.setOnClickListener {
+                val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                val status = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    appOps.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), packageName) ==
+                            AppOpsManager.MODE_ALLOWED
+                } else { false }
 
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                            if (status) {
-                                this.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
-                                dialog.dismiss()
-                                binding.playerView.hideController()
-                                playVideo()
-                            }
-                            else{
-                                val intent = Intent("android.settings.PICTURE_IN_PICTURE_SETTINGS",
-                                    Uri.parse("package:$packageName"))
-                                startActivity(intent)
-                            }
-                        }else{
-                            Toast.makeText(this,"Feature Not Supported!!", Toast.LENGTH_SHORT).show()
-                            dialog.dismiss()
-                            playVideo()
-                        }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                    if (status) {
+                        this.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
+                        dialog.dismiss()
+                        binding.playerView.hideController()
+                        playVideo()
                     }
+                    else{
+                        val intent = Intent("android.settings.PICTURE_IN_PICTURE_SETTINGS",
+                            Uri.parse("package:$packageName"))
+                        startActivity(intent)
+                    }
+                }else{
+                    Toast.makeText(this,"Feature Not Supported!!", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                    playVideo()
                 }
             }
         }

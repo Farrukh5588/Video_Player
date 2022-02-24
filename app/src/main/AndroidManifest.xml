@@ -23,7 +23,7 @@
             android:launchMode="singleTask"
             android:exported="true"
             android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
-            tools:ignore="UnusedAttribute" />
+            tools:targetApi="n" />
         <activity
             android:name=".FoldersActivity"
             android:exported="true"
