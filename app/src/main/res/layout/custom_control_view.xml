@@ -34,7 +34,7 @@
         android:textStyle="bold"
         android:textColor="@color/white"
         android:text="@string/duration"
-        android:layout_margin="10dp"/>
+        android:layout_margin="15dp"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -43,7 +43,7 @@
         android:textStyle="bold"
         android:textColor="@color/white"
         android:text="@string/semi_colon"
-        android:layout_marginVertical="10dp"/>
+        android:layout_marginVertical="15dp"/>
 
     <TextView android:id="@id/exo_duration"
       android:layout_width="wrap_content"
@@ -52,7 +52,7 @@
       android:textStyle="bold"
       android:textColor="@color/white"
         android:text="@string/loading"
-        android:layout_margin="10dp"/>
+        android:layout_margin="15dp"/>
 
   </LinearLayout>
 

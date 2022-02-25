@@ -1,5 +1,6 @@
 package com.rakhimov.videoplayer
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.text.format.DateUtils
@@ -35,10 +36,19 @@ class VideoAdapter(private val context: Context, private var videoList: ArrayLis
             .into(holder.image)
         holder.root.setOnClickListener {
             when{
+                videoList[position].id == PlayerActivity.nowPlayingId -> {
+                    sendIntent(pos = position, ref = "NowPlaying")
+                }
                 isFolder -> {
+                    PlayerActivity.pipStatus = 1
                     sendIntent(pos = position, ref = "FolderActivity")
                 }
+                MainActivity.search -> {
+                    PlayerActivity.pipStatus = 2
+                    sendIntent(pos = position, ref = "SearchedVideos")
+                }
                 else -> {
+                    PlayerActivity.pipStatus = 3
                     sendIntent(pos = position, ref = "AllVideos")
                 }
             }
@@ -53,5 +63,11 @@ class VideoAdapter(private val context: Context, private var videoList: ArrayLis
         val intent = Intent(context, PlayerActivity::class.java)
         intent.putExtra("class", ref)
         ContextCompat.startActivity(context, intent, null)
+    }
+    @SuppressLint("NotifyDataSetChanged")
+     fun updateList(searchList: ArrayList<Video>){
+        videoList = ArrayList()
+        videoList.addAll(searchList)
+        notifyDataSetChanged()
     }
 }

@@ -5,6 +5,7 @@ import android.app.AppOpsManager
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
@@ -17,13 +18,11 @@ import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -40,10 +39,11 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityPlayerBinding
     private lateinit var runnable: Runnable
     private var isSubtitle: Boolean = true
+    private var moreTime: Int = 0
 
     companion object{
         private var timer: Timer? = null
-        private lateinit var player: SimpleExoPlayer
+        private lateinit var player: ExoPlayer
         lateinit var playerList: ArrayList<Video>
         var position: Int = -1
         private var repeat: Boolean = false
@@ -51,6 +51,8 @@ class PlayerActivity : AppCompatActivity() {
         private var isLocked: Boolean =false
         lateinit var trackSelector: DefaultTrackSelector
         private var speed: Float = 1.0f
+        var pipStatus: Int = 0
+        var nowPlayingId: String = ""
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,7 +73,24 @@ class PlayerActivity : AppCompatActivity() {
         }
         initializeLayout()
         initializeBinding()
+        binding.forwardFL.setOnClickListener(DoubleClickListener(callback = object :DoubleClickListener.Callback{
+            override fun doubleClicked() {
+                binding.playerView.showController()
+                binding.forwardBtn.visibility = View.VISIBLE
+                player.seekTo(player.currentPosition + 10000)
+                moreTime = 0
+            }
+        }))
+        binding.rewindFL.setOnClickListener(DoubleClickListener(callback = object :DoubleClickListener.Callback{
+            override fun doubleClicked() {
+                binding.playerView.showController()
+                binding.rewindBtn.visibility = View.VISIBLE
+                player.seekTo(player.currentPosition - 10000)
+                moreTime = 0
+            }
+        }))
     }
+    @SuppressLint("PrivateResource")
     private fun initializeLayout(){
         when(intent.getStringExtra("class")){
             "AllVideos" -> {
@@ -84,11 +103,25 @@ class PlayerActivity : AppCompatActivity() {
                 playerList.addAll(FoldersActivity.currentFolderVideos)
                 createPlayer()
             }
+            "SearchedVideos" ->{
+                playerList = ArrayList()
+                playerList.addAll(MainActivity.searchList)
+                createPlayer()
+            }
+            "NowPlaying" ->{
+                speed = 1.0f
+                binding.videoTitle.text = playerList[position].title
+                binding.videoTitle.isSelected = true
+                binding.playerView.player = player
+                playVideo()
+                playInFullscreen(enable = isFullscreen)
+                setVisibility()
+            }
         }
         if (repeat) binding.repeatBtn.setImageResource(R.drawable.exo_controls_repeat_all)
         else binding.repeatBtn.setImageResource(R.drawable.exo_controls_repeat_off)
     }
-    @SuppressLint("SetTextI18n")
+    @SuppressLint("SetTextI18n", "PrivateResource")
     private fun initializeBinding(){
         binding.backBtn.setOnClickListener {
             finish()
@@ -253,6 +286,7 @@ class PlayerActivity : AppCompatActivity() {
                         dialog.dismiss()
                         binding.playerView.hideController()
                         playVideo()
+                        pipStatus = 0
                     }
                     else{
                         val intent = Intent("android.settings.PICTURE_IN_PICTURE_SETTINGS",
@@ -273,7 +307,7 @@ class PlayerActivity : AppCompatActivity() {
         trackSelector = DefaultTrackSelector(this)
         binding.videoTitle.text = playerList[position].title
         binding.videoTitle.isSelected = true
-        player = SimpleExoPlayer.Builder(this).setTrackSelector(trackSelector).build()
+        player = ExoPlayer.Builder(this).setTrackSelector(trackSelector).build()
         binding.playerView.player = player
         val mediaItem = MediaItem.fromUri(playerList[position].artUri)
         player.setMediaItem(mediaItem)
@@ -287,6 +321,7 @@ class PlayerActivity : AppCompatActivity() {
         })
         playInFullscreen(enable = isFullscreen)
         setVisibility()
+        nowPlayingId = playerList[position].id
     }
     private fun playVideo(){
         binding.playPauseBtn.setImageResource(R.drawable.pause_icon)
@@ -339,6 +374,13 @@ class PlayerActivity : AppCompatActivity() {
         binding.playPauseBtn.visibility = visibility
         if (isLocked) binding.lockButton.visibility = View.VISIBLE
         else binding.lockButton.visibility = visibility
+        if (moreTime == 2){
+            binding.rewindBtn.visibility = View.GONE
+            binding.forwardBtn.visibility = View.GONE
+        }else ++moreTime
+        //for lockscreen -- hiding double tap
+       // binding.rewindFL.visibility = visibility
+       // binding.forwardFL.visibility = visibility
     }
     private fun changeSpeed(isIncrement: Boolean){
         if (isIncrement){
@@ -354,8 +396,21 @@ class PlayerActivity : AppCompatActivity() {
         player.setPlaybackSpeed(speed)
     }
 
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration?) {
+        if (pipStatus != 0){
+            finish()
+            val intent = Intent(this, PlayerActivity::class.java)
+            when(pipStatus){
+                1 -> intent.putExtra("class", "FolderActivity")
+                2 -> intent.putExtra("class", "SearchedVideos")
+                3 -> intent.putExtra("class", "AllVideos")
+            }
+            startActivity(intent)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        player.release()
+        player.pause()
     }
 }
