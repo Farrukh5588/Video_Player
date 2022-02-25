@@ -42,9 +42,17 @@
         <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/drawable-v24/minus_icon.xml" value="0.1" />
         <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/drawable/forward_icon.xml" value="0.1" />
         <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/drawable/rewind_icon.xml" value="0.1" />
+        <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/drawable/search_icon.xml" value="0.1" />
+        <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/layout/activity_about.xml" value="0.14356884057971014" />
         <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/layout/activity_player.xml" value="0.14356884057971014" />
+        <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/layout/custom_control_view.xml" value="0.14356884057971014" />
+        <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/layout/fragment_videos.xml" value="0.19" />
         <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/layout/more_features.xml" value="0.14356884057971014" />
+        <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/layout/nav_header.xml" value="0.14356884057971014" />
         <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/layout/speed_dialog.xml" value="0.14356884057971014" />
+        <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/layout/video_view.xml" value="0.14356884057971014" />
+        <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/menu/nav_menu.xml" value="0.20416666666666666" />
+        <entry key="..\:/Users/user/gpo/repos/2/Video_Player/app/src/main/res/menu/search_view.xml" value="0.20416666666666666" />
       </map>
     </option>
   </component>

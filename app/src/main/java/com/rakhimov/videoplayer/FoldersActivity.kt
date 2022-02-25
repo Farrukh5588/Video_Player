@@ -20,7 +20,7 @@ class FoldersActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val binding =ActivityFoldersBinding.inflate(layoutInflater)
-        setTheme(R.style.BlueNav)
+        setTheme(MainActivity.themesList[MainActivity.themeIndex])
         setContentView(binding.root)
         val position = intent.getIntExtra("position",0)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)

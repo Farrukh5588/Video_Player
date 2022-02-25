@@ -5,13 +5,13 @@
     android:layout_height="170dp"
     android:padding="16dp"
     android:layout_marginTop="80dp"
-    android:background="@color/blue">
+    android:background="?attr/themeColor">
 
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@mipmap/ic_video_player"
-        android:background="@color/blue"
+        android:background="?attr/themeColor"
         android:contentDescription="@string/app_name" />
     <TextView
         android:layout_width="wrap_content"
