@@ -14,8 +14,10 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.MenuItem
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -91,7 +93,21 @@ class MainActivity : AppCompatActivity() {
                     bindingTV.themeRed.setOnClickListener { saveTheme(4) }
                     bindingTV.themeGrey.setOnClickListener { saveTheme(5) }
                 }
-                R.id.sortOrderNav -> Toast.makeText(this,"Sort order",Toast.LENGTH_SHORT).show()
+                R.id.sortOrderNav -> {
+                    val menuItems = arrayOf("Latest", "Oldest", "Name(A to Z)", "Name(Z to A)",
+                        "File Size(Smallest)","File Size(Lagest)")
+                    val dialog = MaterialAlertDialogBuilder(this)
+                        .setTitle("Sort By")
+                        .setPositiveButton("OK"){self, _->
+                            self.dismiss()
+                        }
+                        .setSingleChoiceItems(menuItems, 0){_, pos ->
+                            Toast.makeText(this@MainActivity, menuItems[pos], Toast.LENGTH_SHORT).show()
+                        }
+                        .create()
+                    dialog.show()
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setBackgroundColor(Color.RED)
+                }
                 R.id.aboutNav -> startActivity(Intent(this,AboutActivity::class.java))
                 R.id.exitNav -> exitProcess(1)
             }
@@ -128,6 +144,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+
+        val gradientList = arrayOf(R.drawable.blue_gradient, R.drawable.teal_gradient, R.drawable.purple_gradient,
+            R.drawable.green_gradient, R.drawable.red_gradient, R.drawable.grey_gradient)
+
+        findViewById<LinearLayout>(R.id.gradientLayout).setBackgroundResource(gradientList[themeIndex])
+
         if (toggle.onOptionsItemSelected(item))
             return true
         return super.onOptionsItemSelected(item)
