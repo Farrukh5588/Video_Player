@@ -1,15 +1,24 @@
 package com.rakhimov.videoplayer
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.ColorDrawable
+import android.text.SpannableStringBuilder
 import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.rakhimov.videoplayer.databinding.MoreFeaturesBinding
+import com.rakhimov.videoplayer.databinding.RenameFieldBinding
+import com.rakhimov.videoplayer.databinding.VideoMoreFeaturesBinding
 import com.rakhimov.videoplayer.databinding.VideoViewBinding
 
 class VideoAdapter(private val context: Context, private var videoList: ArrayList<Video>,private val isFolder: Boolean = false) : RecyclerView.Adapter<VideoAdapter.MyHolder>() {
@@ -52,6 +61,37 @@ class VideoAdapter(private val context: Context, private var videoList: ArrayLis
                     sendIntent(pos = position, ref = "AllVideos")
                 }
             }
+        }
+        holder.root.setOnLongClickListener {
+            val customDialog = LayoutInflater.from(context).inflate(R.layout.video_more_features, holder.root, false)
+            val bindingMF = VideoMoreFeaturesBinding.bind(customDialog)
+            val dialog = MaterialAlertDialogBuilder(context).setView(customDialog)
+                .create()
+            dialog.show()
+
+            bindingMF.renameBtn.setOnClickListener {
+                dialog.dismiss()
+                val customDialogRF = LayoutInflater.from(context).inflate(R.layout.rename_field, holder.root, false)
+                val bindingRF = RenameFieldBinding.bind(customDialogRF)
+                val dialogRF = MaterialAlertDialogBuilder(context).setView(customDialogRF)
+                    .setCancelable(false)
+                    .setPositiveButton("Rename"){self, _->
+                        self.dismiss()
+                    }
+                    .setNegativeButton("Cansel"){self, _->
+                        self.dismiss()
+                    }
+                    .create()
+                dialogRF.show()
+                bindingRF.renameField.text = SpannableStringBuilder(videoList[position].title)
+                dialogRF.getButton(AlertDialog.BUTTON_POSITIVE).setBackgroundColor(
+                    MaterialColors.getColor(context, R.attr.themeColor, ContextCompat.getColor(context,R.color.black))
+                )
+                dialogRF.getButton(AlertDialog.BUTTON_NEGATIVE).setBackgroundColor(
+                    MaterialColors.getColor(context, R.attr.themeColor, ContextCompat.getColor(context,R.color.black))
+                )
+            }
+            return@setOnLongClickListener true
         }
     }
 

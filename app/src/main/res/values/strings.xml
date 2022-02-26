@@ -35,4 +35,9 @@
     <string name="pip_mode">PIP Mode</string>
     <string name="search">Search</string>
 
+    <string name="info">Info</string>
+    <string name="rename">Rename</string>
+    <string name="share">Share</string>
+    <string name="delete">Delete</string>
+
 </resources>

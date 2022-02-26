@@ -32,6 +32,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var toggle: ActionBarDrawerToggle
+    private val sortList = arrayOf(MediaStore.Video.Media.DATE_ADDED + " DESC", MediaStore.Video.Media.DATE_ADDED,
+        MediaStore.Video.Media.TITLE, MediaStore.Video.Media.TITLE + " DESC", MediaStore.Video.Media.SIZE,
+        MediaStore.Video.Media.SIZE + " DESC")
 
     companion object{
         lateinit var videoList: ArrayList<Video>
@@ -39,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         lateinit var searchList: ArrayList<Video>
         var search: Boolean = false
         var themeIndex: Int = 0
+        private var sortValue: Int = 0
         val themesList = arrayOf(R.style.BlueNav, R.style.TealNav, R.style.PurpleNav,
             R.style.GreenNav,R.style.RedNav, R.style.GreyNav)
     }
@@ -96,13 +100,20 @@ class MainActivity : AppCompatActivity() {
                 R.id.sortOrderNav -> {
                     val menuItems = arrayOf("Latest", "Oldest", "Name(A to Z)", "Name(Z to A)",
                         "File Size(Smallest)","File Size(Lagest)")
+                    var value = sortValue
                     val dialog = MaterialAlertDialogBuilder(this)
                         .setTitle("Sort By")
-                        .setPositiveButton("OK"){self, _->
-                            self.dismiss()
+                        .setPositiveButton("OK"){_, _->
+                            val sortEditor = getSharedPreferences("Sorting", MODE_PRIVATE).edit()
+                            sortEditor.putInt("sortValue", value)
+                            sortEditor.apply()
+
+                            //for restating app
+                            finish()
+                            startActivity(intent)
                         }
-                        .setSingleChoiceItems(menuItems, 0){_, pos ->
-                            Toast.makeText(this@MainActivity, menuItems[pos], Toast.LENGTH_SHORT).show()
+                        .setSingleChoiceItems(menuItems, sortValue){_, pos ->
+                            value = pos
                         }
                         .create()
                     dialog.show()
@@ -157,13 +168,16 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("InlinedApi", "Recycle", "Range")
     private fun getAllVideos(): ArrayList<Video>{
+        val sortEditor = getSharedPreferences("Sorting", MODE_PRIVATE)
+        sortValue = sortEditor.getInt("sortValue", 0)
+
         val templist = ArrayList<Video>()
         val tempFolderList =ArrayList<String>()
         val projection = arrayOf(MediaStore.Video.Media.TITLE,MediaStore.Video.Media.SIZE,MediaStore.Video.Media._ID,
             MediaStore.Video.Media.BUCKET_DISPLAY_NAME,MediaStore.Video.Media.DATA,MediaStore.Video.Media.DATE_ADDED,
             MediaStore.Video.Media.DURATION, MediaStore.Video.Media.BUCKET_ID)
         val cursor = this.contentResolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,projection,null,null,
-        MediaStore.Video.Media.DATE_ADDED + " DESC")
+        sortList[sortValue])
         if (cursor != null)
             if (cursor.moveToNext())
                 do {
@@ -187,8 +201,6 @@ class MainActivity : AppCompatActivity() {
                             tempFolderList.add(folderC)
                             folderList.add(Folder(id = folderIdC, folderName = folderC))
                         }
-
-
                     }catch (e:Exception){}
                 }while (cursor.moveToNext())
                 cursor?.close()
