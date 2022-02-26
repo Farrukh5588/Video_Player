@@ -11,9 +11,12 @@ import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.MenuItem
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -35,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private val sortList = arrayOf(MediaStore.Video.Media.DATE_ADDED + " DESC", MediaStore.Video.Media.DATE_ADDED,
         MediaStore.Video.Media.TITLE, MediaStore.Video.Media.TITLE + " DESC", MediaStore.Video.Media.SIZE,
         MediaStore.Video.Media.SIZE + " DESC")
+    private var runnable: Runnable? = null
 
     companion object{
         lateinit var videoList: ArrayList<Video>
@@ -45,6 +49,8 @@ class MainActivity : AppCompatActivity() {
         private var sortValue: Int = 0
         val themesList = arrayOf(R.style.BlueNav, R.style.TealNav, R.style.PurpleNav,
             R.style.GreenNav,R.style.RedNav, R.style.GreyNav)
+        var dataChanged: Boolean = false
+        var adapterChanged: Boolean = false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +71,16 @@ class MainActivity : AppCompatActivity() {
             folderList = ArrayList()
             videoList =getAllVideos()
             setFragment(VideosFragment())
+
+            runnable = Runnable {
+                if (dataChanged){
+                    videoList = getAllVideos()
+                    dataChanged = false
+                    adapterChanged = true
+                }
+                Handler(Looper.getMainLooper()).postDelayed(runnable!!, 200)
+            }
+            Handler(Looper.getMainLooper()).postDelayed(runnable!!, 0)
         }
        binding.bottomNav.setOnItemSelectedListener {
            when(it.itemId){
@@ -215,5 +231,10 @@ class MainActivity : AppCompatActivity() {
         //for restating app
         finish()
         startActivity(intent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        runnable = null
     }
 }
