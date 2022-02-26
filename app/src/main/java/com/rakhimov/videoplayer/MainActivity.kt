@@ -2,12 +2,9 @@ package com.rakhimov.videoplayer
 
 import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.annotation.SuppressLint
-import android.app.ActionBar
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -16,7 +13,6 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.MenuItem
-import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -25,7 +21,6 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.rakhimov.videoplayer.databinding.ActivityMainBinding
-import com.rakhimov.videoplayer.databinding.MoreFeaturesBinding
 import com.rakhimov.videoplayer.databinding.ThemeViewBinding
 import java.io.File
 import kotlin.Exception
@@ -78,11 +73,11 @@ class MainActivity : AppCompatActivity() {
                     dataChanged = false
                     adapterChanged = true
                 }
-                Handler(Looper.getMainLooper()).postDelayed(runnable!!, 200)
             }
             Handler(Looper.getMainLooper()).postDelayed(runnable!!, 0)
         }
        binding.bottomNav.setOnItemSelectedListener {
+           if (dataChanged) videoList = getAllVideos()
            when(it.itemId){
                R.id.videoView -> setFragment(VideosFragment())
                R.id.folderView -> setFragment(FoldersFragment())
@@ -97,7 +92,6 @@ class MainActivity : AppCompatActivity() {
                     val dialog = MaterialAlertDialogBuilder(this).setView(customDialog)
                         .setTitle("Select Theme")
                         .create()
-                    dialog.show()
                     when(themeIndex){
                         0 -> bindingTV.themeBlue.setBackgroundColor(Color.WHITE)
                         1 -> bindingTV.themeTeal.setBackgroundColor(Color.WHITE)
@@ -112,6 +106,7 @@ class MainActivity : AppCompatActivity() {
                     bindingTV.themeGreen.setOnClickListener { saveTheme(3) }
                     bindingTV.themeRed.setOnClickListener { saveTheme(4) }
                     bindingTV.themeGrey.setOnClickListener { saveTheme(5) }
+                    dialog.show()
                 }
                 R.id.sortOrderNav -> {
                     val menuItems = arrayOf("Latest", "Oldest", "Name(A to Z)", "Name(Z to A)",

@@ -7,12 +7,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.drawable.ColorDrawable
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.Window
@@ -29,12 +31,13 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.rakhimov.videoplayer.databinding.ActivityPlayerBinding
 import com.rakhimov.videoplayer.databinding.MoreFeaturesBinding
 import com.rakhimov.videoplayer.databinding.SpeedDialogBinding
+import java.io.File
 import java.text.DecimalFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.system.exitProcess
 
-class PlayerActivity : AppCompatActivity() {
+class PlayerActivity : AppCompatActivity(), AudioManager.OnAudioFocusChangeListener {
 
     private lateinit var binding: ActivityPlayerBinding
     private lateinit var runnable: Runnable
@@ -42,6 +45,7 @@ class PlayerActivity : AppCompatActivity() {
     private var moreTime: Int = 0
 
     companion object{
+        private var audioManager: AudioManager? = null
         private var timer: Timer? = null
         private lateinit var player: ExoPlayer
         lateinit var playerList: ArrayList<Video>
@@ -71,24 +75,32 @@ class PlayerActivity : AppCompatActivity() {
             controller.hide(WindowInsetsCompat.Type.systemBars())
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
-        initializeLayout()
-        initializeBinding()
-        binding.forwardFL.setOnClickListener(DoubleClickListener(callback = object :DoubleClickListener.Callback{
-            override fun doubleClicked() {
-                binding.playerView.showController()
-                binding.forwardBtn.visibility = View.VISIBLE
-                player.seekTo(player.currentPosition + 10000)
-                moreTime = 0
+
+        //for handling video file intend
+        try {
+            if(intent.data?.scheme.contentEquals("content")){
+                playerList = ArrayList()
+                position = 0
+                val cursor =contentResolver.query(intent.data!!, arrayOf(MediaStore.Video.Media.DATA), null,
+                    null,null)
+                cursor?.let {
+                    it.moveToFirst()
+                    val path = it.getString(it.getColumnIndexOrThrow(MediaStore.Video.Media.DATA))
+                    val file = File(path)
+                    val video = Video(id = "", title = file.name, duration = 0L, artUri = Uri.fromFile(file),
+                        path = path, size = "", folderName = "")
+                    playerList.add(video)
+                    cursor.close()
+                }
+                createPlayer()
+                initializeBinding()
             }
-        }))
-        binding.rewindFL.setOnClickListener(DoubleClickListener(callback = object :DoubleClickListener.Callback{
-            override fun doubleClicked() {
-                binding.playerView.showController()
-                binding.rewindBtn.visibility = View.VISIBLE
-                player.seekTo(player.currentPosition - 10000)
-                moreTime = 0
+            else{
+                initializeLayout()
+                initializeBinding()
             }
-        }))
+        }catch (e: Exception){Toast.makeText(this,e.toString(),Toast.LENGTH_SHORT).show()}
+
     }
     @SuppressLint("PrivateResource")
     private fun initializeLayout(){
@@ -123,6 +135,22 @@ class PlayerActivity : AppCompatActivity() {
     }
     @SuppressLint("SetTextI18n", "PrivateResource")
     private fun initializeBinding(){
+        binding.forwardFL.setOnClickListener(DoubleClickListener(callback = object :DoubleClickListener.Callback{
+            override fun doubleClicked() {
+                binding.playerView.showController()
+                binding.forwardBtn.visibility = View.VISIBLE
+                player.seekTo(player.currentPosition + 10000)
+                moreTime = 0
+            }
+        }))
+        binding.rewindFL.setOnClickListener(DoubleClickListener(callback = object :DoubleClickListener.Callback{
+            override fun doubleClicked() {
+                binding.playerView.showController()
+                binding.rewindBtn.visibility = View.VISIBLE
+                player.seekTo(player.currentPosition - 10000)
+                moreTime = 0
+            }
+        }))
         binding.backBtn.setOnClickListener {
             finish()
         }
@@ -407,10 +435,22 @@ class PlayerActivity : AppCompatActivity() {
             }
             startActivity(intent)
         }
+        if (!isInPictureInPictureMode) pauseVideo()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         player.pause()
+        audioManager?.abandonAudioFocus(this)
+    }
+
+    override fun onAudioFocusChange(focusChange: Int) {
+        if (focusChange <= 0) pauseVideo()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (audioManager == null) audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audioManager!!.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
     }
 }
