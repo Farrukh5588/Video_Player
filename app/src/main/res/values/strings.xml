@@ -40,5 +40,6 @@
     <string name="share">Share</string>
     <string name="delete">Delete</string>
     <string name="orientation">Orientation</string>
+    <string name="O">0</string>
 
 </resources>

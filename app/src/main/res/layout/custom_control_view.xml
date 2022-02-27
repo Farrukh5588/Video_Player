@@ -140,8 +140,8 @@
       app:flow_horizontalBias="0.444"
       app:played_color="@color/white"
       app:scrubber_color="@color/white"
-      app:scrubber_disabled_size="5dp"
-      app:scrubber_enabled_size="10dp"
+      app:scrubber_disabled_size="10dp"
+      app:scrubber_enabled_size="15dp"
       app:unplayed_color="#80FFFFFF"
       />
 
