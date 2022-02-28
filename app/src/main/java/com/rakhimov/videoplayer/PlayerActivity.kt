@@ -1,6 +1,7 @@
 package com.rakhimov.videoplayer
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.app.AppOpsManager
 import android.app.PictureInPictureParams
 import android.content.Context
@@ -8,6 +9,7 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.AudioManager
 import android.net.Uri
@@ -66,6 +68,8 @@ class PlayerActivity : AppCompatActivity(), AudioManager.OnAudioFocusChangeListe
         private var speed: Float = 1.0f
         var pipStatus: Int = 0
         var nowPlayingId: String = ""
+        private var brightness: Int = 0
+        private var volume: Int = 0
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -216,22 +220,45 @@ class PlayerActivity : AppCompatActivity(), AudioManager.OnAudioFocusChangeListe
                 dialog.dismiss()
                 playVideo()
                 val audioTrack = ArrayList<String>()
-                for (i in 0 until player.currentTrackGroups.length){
-                    if (player.currentTrackGroups.get(i).getFormat(0).selectionFlags == C.SELECTION_FLAG_DEFAULT){
-                        audioTrack.add(Locale(player.currentTrackGroups.get(i).getFormat(0).language.toString()).displayLanguage)
+                val audioList = ArrayList<String>()
+//                for (i in 0 until player.currentTrackGroups.length){
+//                    if (player.currentTrackGroups.get(i).getFormat(0).selectionFlags == C.SELECTION_FLAG_DEFAULT){
+//                        audioTrack.add(Locale(player.currentTrackGroups.get(i).getFormat(0).language.toString()).displayLanguage)
+//                    }
+//                }
+                for (group in player.currentTracksInfo.trackGroupInfos){
+                    if (group.trackType == C.TRACK_TYPE_AUDIO){
+                        val gropInfo = group.trackGroup
+                        for (i in 0 until  gropInfo.length){
+                            audioTrack.add(gropInfo.getFormat(i).language.toString())
+                            audioList.add("${audioList.size + 1}. " + Locale(gropInfo.getFormat(i).language.toString()).displayLanguage
+                            + " (${gropInfo.getFormat(i).label})")
+                        }
                     }
                 }
-                val tempTracks = audioTrack.toArray(arrayOfNulls<CharSequence>(audioTrack.size))
-                MaterialAlertDialogBuilder(this, R.style.alertDialog)
+
+                if (audioList[0].contains("null")) audioList[0] = "1.Default Track"
+
+                val tempTracks = audioList.toArray(arrayOfNulls<CharSequence>(audioList.size))
+                val audioDialog = MaterialAlertDialogBuilder(this, R.style.alertDialog)
                     .setTitle("Select Language")
                     .setOnCancelListener { playVideo() }
-                    .setBackground(ColorDrawable(0x803700B3.toInt()))
+                    .setPositiveButton("Off Audio"){self, _ ->
+                        trackSelector.setParameters(trackSelector.buildUponParameters().setRendererDisabled(
+                            C.TRACK_TYPE_AUDIO, true
+                        ))
+                        self.dismiss()
+                    }
                     .setItems(tempTracks){_,position ->
-                        Toast.makeText(this,audioTrack[position] + " Selected", Toast.LENGTH_SHORT).show()
-                        trackSelector.setParameters(trackSelector.buildUponParameters().setPreferredAudioLanguages(audioTrack[position]))
+                        Toast.makeText(this,audioList[position] + " Selected", Toast.LENGTH_SHORT).show()
+                        trackSelector.setParameters(trackSelector.buildUponParameters()
+                            .setRendererDisabled(C.TRACK_TYPE_AUDIO, false)
+                            .setPreferredAudioLanguages(audioTrack[position]))
                     }
                     .create()
-                    .show()
+                    audioDialog.show()
+                audioDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE)
+                audioDialog.window?.setBackgroundDrawable(ColorDrawable(0x99000000.toInt()))
             }
             bindingMF.subtitleBtn.setOnClickListener {
                 if (isSubtitle){
@@ -447,6 +474,7 @@ class PlayerActivity : AppCompatActivity(), AudioManager.OnAudioFocusChangeListe
         super.onResume()
         if (audioManager == null) audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         audioManager!!.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+        if (brightness != 0) setScreenBrightness(brightness)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -463,7 +491,21 @@ class PlayerActivity : AppCompatActivity(), AudioManager.OnAudioFocusChangeListe
         })
         binding.ytOverlay.player(player)
         binding.playerView.setOnTouchListener { _, motionEvent ->
-            gestureDetectorCompat.onTouchEvent(motionEvent)
+            binding.playerView.isDoubleTapEnabled = false
+            if (!isLocked){
+                binding.playerView.isDoubleTapEnabled = true
+                gestureDetectorCompat.onTouchEvent(motionEvent)
+                if (motionEvent.action == MotionEvent.ACTION_UP) {
+                    binding.brightnessIcon.visibility = View.GONE
+                    binding.volumeIcon.visibility = View.GONE
+                    //for immersive mode
+                    WindowCompat.setDecorFitsSystemWindows(window,false)
+                    WindowInsetsControllerCompat(window, binding.root).let { controller ->
+                        controller.hide(WindowInsetsCompat.Type.systemBars())
+                        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    }
+                }
+            }
             return@setOnTouchListener false
         }
     }
@@ -492,19 +534,42 @@ class PlayerActivity : AppCompatActivity(), AudioManager.OnAudioFocusChangeListe
     override fun onScroll(event: MotionEvent?, event1: MotionEvent?, distanceX: Float, distanceY: Float): Boolean {
 
         val sWidth = Resources.getSystem().displayMetrics.widthPixels
+        val sHeight = Resources.getSystem().displayMetrics.heightPixels
+
+        val border = 100 * Resources.getSystem().displayMetrics.density.toInt()
+        if (event!!.x < border || event.y < border || event.x > sWidth - border || event.y > sHeight - border )
+            return false
 
         if (abs(distanceX) < abs(distanceY)){
-            if (event!!.x < sWidth/2){
+            if (event.x < sWidth/2){
                 //brightness
                 binding.brightnessIcon.visibility = View.VISIBLE
                 binding.volumeIcon.visibility = View.GONE
+                val increase = distanceY > 0
+                val newValue = if (increase) brightness + 1 else brightness - 1
+                if (newValue in 0..30) brightness = newValue
+                binding.brightnessIcon.text = brightness.toString()
+                setScreenBrightness(brightness)
             }
             else{
                 //volume
                 binding.brightnessIcon.visibility = View.GONE
                 binding.volumeIcon.visibility = View.VISIBLE
+                val maxVolume = audioManager!!.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                val increase = distanceY > 0
+                val newValue = if (increase) volume + 1 else volume - 1
+                if (newValue in 0..maxVolume) volume = newValue
+                binding.volumeIcon.text = volume.toString()
+                audioManager!!.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
             }
         }
         return true
+    }
+
+    private fun setScreenBrightness(value: Int){
+        val d = 1.0f/30
+        val lp =this.window.attributes
+        lp.screenBrightness = d*value
+        this.window.attributes = lp
     }
 }
