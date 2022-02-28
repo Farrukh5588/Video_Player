@@ -14,7 +14,7 @@ import com.rakhimov.videoplayer.databinding.FragmentVideosBinding
 
 class VideosFragment : Fragment() {
 
-    private lateinit var adapter: VideoAdapter
+    lateinit var adapter: VideoAdapter
     private lateinit var binding: FragmentVideosBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {

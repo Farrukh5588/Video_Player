@@ -1,6 +1,7 @@
 package com.rakhimov.videoplayer
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -11,6 +12,8 @@ import com.rakhimov.videoplayer.databinding.ActivityFoldersBinding
 import java.io.File
 
 class FoldersActivity : AppCompatActivity() {
+
+    lateinit var adapter: VideoAdapter
 
     companion object{
         lateinit var currentFolderVideos: ArrayList<Video>
@@ -26,11 +29,11 @@ class FoldersActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = MainActivity.folderList[position].folderName
         currentFolderVideos = getAllVideos(MainActivity.folderList[position].id)
-
         binding.videoRVFA.setHasFixedSize(true)
         binding.videoRVFA.setItemViewCacheSize(10)
         binding.videoRVFA.layoutManager = LinearLayoutManager(this@FoldersActivity)
-        binding.videoRVFA.adapter = VideoAdapter(this@FoldersActivity, currentFolderVideos, isFolder = true)
+        adapter = VideoAdapter(this@FoldersActivity, currentFolderVideos, isFolder = true)
+        binding.videoRVFA.adapter = adapter
         binding.totalVideosFA.text = "Total Videos: ${currentFolderVideos.size}"
     }
 
@@ -71,5 +74,10 @@ class FoldersActivity : AppCompatActivity() {
                 }while (cursor.moveToNext())
         cursor?.close()
         return templist
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        adapter.onResult(requestCode, resultCode)
     }
 }
