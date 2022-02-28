@@ -12,6 +12,7 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.AudioManager
+import android.media.audiofx.LoudnessEnhancer
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -38,6 +39,7 @@ import com.google.android.exoplayer2.ui.TimeBar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.rakhimov.videoplayer.databinding.ActivityPlayerBinding
+import com.rakhimov.videoplayer.databinding.BoosterBinding
 import com.rakhimov.videoplayer.databinding.MoreFeaturesBinding
 import com.rakhimov.videoplayer.databinding.SpeedDialogBinding
 import java.io.File
@@ -64,7 +66,8 @@ class PlayerActivity : AppCompatActivity(), AudioManager.OnAudioFocusChangeListe
         private var repeat: Boolean = false
         private var isFullscreen: Boolean =false
         private var isLocked: Boolean =false
-        lateinit var trackSelector: DefaultTrackSelector
+        private lateinit var trackSelector: DefaultTrackSelector
+        private lateinit var loudnessEnhancer: LoudnessEnhancer
         private var speed: Float = 1.0f
         var pipStatus: Int = 0
         var nowPlayingId: String = ""
@@ -293,6 +296,26 @@ class PlayerActivity : AppCompatActivity(), AudioManager.OnAudioFocusChangeListe
                 sDialog.window?.setBackgroundDrawable(ColorDrawable(0x99000000.toInt()))
 
             }
+            bindingMF.audioBooster.setOnClickListener {
+                dialog.dismiss()
+                val customDialogB = LayoutInflater.from(this).inflate(R.layout.booster, binding.root, false)
+                val bindingB = BoosterBinding.bind(customDialogB)
+                val dialogB = MaterialAlertDialogBuilder(this).setView(customDialogB)
+                    .setOnCancelListener { playVideo() }
+                    .setPositiveButton("OK"){self, _ ->
+                        loudnessEnhancer.setTargetGain(bindingB.verticakBar.progress * 100)
+                        playVideo()
+                        self.dismiss()
+                    }
+                    .setBackground(ColorDrawable(0x803700B3.toInt()))
+                    .create()
+                dialogB.show()
+                bindingB.verticakBar.progress = loudnessEnhancer.targetGain.toInt()/100
+                bindingB.progressText.text = "Audio Boost\n\n${loudnessEnhancer.targetGain.toInt()/10}%"
+                bindingB.verticakBar.setOnProgressChangeListener {
+                    bindingB.progressText.text = "Audio Boost\n\n${it*10}%"
+                }
+            }
             bindingMF.speedBtn.setOnClickListener {
                 dialog.dismiss()
                 playVideo()
@@ -400,6 +423,8 @@ class PlayerActivity : AppCompatActivity(), AudioManager.OnAudioFocusChangeListe
         playInFullscreen(enable = isFullscreen)
         nowPlayingId = playerList[position].id
         seekBarFeature()
+        loudnessEnhancer = LoudnessEnhancer(player.audioSessionId)
+        loudnessEnhancer.enabled = true
 
         binding.playerView.setControllerVisibilityListener {
             when{
